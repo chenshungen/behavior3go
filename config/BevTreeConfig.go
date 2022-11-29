@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"reflect"
+	"strconv"
 )
 
 //编辑器地址@http://editor.behavior3.com/#/editor
@@ -24,13 +26,11 @@ func (this *BTNodeCfg) GetProperty(name string) float64 {
 	v, ok := this.Properties[name]
 	if !ok {
 		panic("GetProperty err ,no vlaue:" + name)
-		return 0
 	}
 	f64, fok := v.(float64)
 	if !fok {
 		fmt.Println("GetProperty err ,format not fload64:", name, v)
 		panic("GetProperty err ,format not fload64:" + name)
-		return 0
 	}
 	return f64
 }
@@ -59,24 +59,40 @@ func (this *BTNodeCfg) GetPropertyAsBool(name string) bool {
 		}
 		fmt.Println("GetProperty err ,format not bool:", name, v)
 		panic("GetProperty err ,format not bool:" + name)
-		return false
 	}
 	return b
 }
+
 func (this *BTNodeCfg) GetPropertyAsString(name string) string {
 	v, ok := this.Properties[name]
 	if !ok {
 		panic("GetProperty err ,no vlaue:" + name)
-		return ""
 	}
 
-	str, fok := v.(string)
-	if !fok {
-		fmt.Println("GetProperty err ,format not string:", name, v)
-		panic("GetProperty err ,format not string:" + name)
-		return ""
+	strCast := func(v interface{}) string {
+		switch v := v.(type) {
+		case nil:
+			return ""
+		case string:
+			return v
+		case []byte:
+			return string(v)
+		case int, int8, int16, int32, int64:
+			return strconv.FormatInt(reflect.ValueOf(v).Int(), 10)
+		case uint, uint8, uint16, uint32, uint64:
+			return strconv.FormatUint(reflect.ValueOf(v).Uint(), 10)
+		case float32:
+			return strconv.FormatFloat(float64(v), 'f', 3, 32)
+		case float64:
+			return strconv.FormatFloat(float64(v), 'f', 3, 64)
+		case bool:
+			return strconv.FormatBool(v)
+		default:
+			return ""
+		}
 	}
-	return str
+
+	return strCast(v)
 }
 
 //树json类型
